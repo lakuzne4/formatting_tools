@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	<link href="./Проверить_files/prism.css" rel="stylesheet">
+	
+    <title>Tree Example</title>
+	
+    <style>
+	
+	#BUTTON { background-color: #008CBA;padding: 15px 32px;color: white;font-size: 16px; }
+	
+	.node {
+		cursor: pointer;
+	}
+
+	.node circle {
+	  fill: #fff;
+	  stroke: steelblue;
+	  stroke-width: 3px;
+	}
+
+	.node text {
+	  font: 16px sans-serif;
+	}
+
+	.link {
+	  fill: none;
+	  stroke: #ccc;
+	  stroke-width: 2px;
+	}
+	
+    </style>
+
+  </head>
+
+  <body>
+
+<!-- load the d3.js library -->	
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script> -->
+<script src='d3.min.js'></script>
+<script src="prism.js"></script>
+<script>
+
+	var python_codes=['  SELECT t1.channel_cd,t1.campaign_nm,t1.customer_id,t1.contact_id,t1.offer_id,\n            t1.contact_dttm, t1.client_id_in_response_table,t1.product_nm,t1.request_id,\n            t1.request_dt,t1.issue_id,t1.issue_dt, t1.start_dt, CAST(t1.issue_sum AS \n            DECIMAL(25,2)) AS issue_sum, COUNT(t2.contact_dt) AS \n            cnt_batch_contacts_after_NBO  \n  FROM \n  (\n            SELECT t1.channel_cd,t1.campaign_nm,t1.customer_id,t1.contact_id,t1.offer_id,\n                      t1.contact_dttm, t2.client_id_in_response_table,t2.product_nm, \n                      CAST(t2.request_id AS DECIMAL(18,0)) AS request_id, t2.request_dt,t2.issue_id,\n                      t2.issue_dt,t2.start_dt,t2.issue_sum \n            FROM \n            (\n                      SELECT channel_cd,campaign_nm,CAST(customer_id AS DECIMAL(18,0)) AS customer_id\n                                , CAST(offer_id AS DECIMAL(18,0)) AS offer_id, CAST(contact_id AS DECIMAL(18,\n                                0)) AS contact_id, CAST(offer_id AS TIMESTAMP) AS contact_dttm \n                      FROM sbx_005.first_table \n                      WHERE campaign_name in (\'NBO one campaign\',\'Nbo third campaign\',\'NBO credit\')  \n            ) t1 \n            LEFT \n            JOIN \n            (\n                      SELECT t1.* \n                      from \n                      (\n                                SELECT t1.*,t2.* \n                                FROM \n                                (\n                                          SELECT channel_cd,campaign_nm,CAST(customer_id AS DECIMAL(18,0)) AS customer_id\n                                                    , CAST(offer_id AS DECIMAL(18,0)) AS offer_id, CAST(contact_id AS DECIMAL(18,\n                                                    0)) AS contact_id, CAST(offer_id AS TIMESTAMP) AS contact_dttm \n                                          FROM sbx_005.first_table \n                                          WHERE campaign_name in (\'NBO one campaign\',\'Nbo third campaign\',\'NBO credit\') \n                                ) t1 \n                                INNER \n                                JOIN \n                                (\n                                          SELECT * \n                                          FROM sbx_005.stat_loans_request_appr \n                                          WHERE product_kind_nm="ИПОТЕКА" \n                                ) t2 ON (t1.customer_id=t2.customer_id_in_response_table) AND \n                                          ((t1.channel_cd=\'ufo\' and (CAST(t2.request_id AS TIMESTAMP)>= \n                                          TRUNC(CAST(t1.contact_dttm AS TIMESTAMP),\'dd\') AND CAST(t2.request_dt AS \n                                          TIMESTAMP)<date_add(cast(t1.contact_dttm AS TIMESTAMP),1))) OR \n                                          (t1.channel_cd=\'ufo-cc\' and (CAST(t2.request_id AS TIMESTAMP)>= \n                                          TRUNC(CAST(t1.contact_dttm AS TIMESTAMP),\'dd\') AND CAST(t2.request_dt AS \n                                          TIMESTAMP)<date_add(cast(t1.contact_dttm AS TIMESTAMP),7)))  ) \n                      ) t1 \n                      inner \n                      join \n                      (\n                                SELECT request_id,MAX(t1.contact_dttm) AS MAX_contact_DT \n                                FROM \n                                (\n                                          SELECT t1.*,t2.* \n                                          FROM \n                                          (\n                                                    SELECT channel_cd,campaign_nm,CAST(customer_id AS DECIMAL(18,0)) AS customer_id\n                                                              , CAST(offer_id AS DECIMAL(18,0)) AS offer_id, CAST(contact_id AS DECIMAL(18,\n                                                              0)) AS contact_id, CAST(offer_id AS TIMESTAMP) AS contact_dttm \n                                                    FROM sbx_005.first_table \n                                                    WHERE campaign_name in (\'NBO one campaign\',\'Nbo third campaign\',\'NBO credit\') \n                                          ) t1 \n                                          INNER \n                                          JOIN \n                                          (\n                                                    SELECT * \n                                                    FROM sbx_005.stat_loans_request_appr \n                                                    WHERE product_kind_nm="ИПОТЕКА" \n                                          ) t2 ON (t1.customer_id=t2.customer_id_in_response_table) AND \n                                                    ((t1.channel_cd=\'ufo\' and (CAST(t2.request_id AS TIMESTAMP)>= \n                                                    TRUNC(CAST(t1.contact_dttm AS TIMESTAMP),\'dd\') AND CAST(t2.request_dt AS \n                                                    TIMESTAMP)<date_add(cast(t1.contact_dttm AS TIMESTAMP),1))) OR \n                                                    (t1.channel_cd=\'ufo-cc\' and (CAST(t2.request_id AS TIMESTAMP)>= \n                                                    TRUNC(CAST(t1.contact_dttm AS TIMESTAMP),\'dd\') AND CAST(t2.request_dt AS \n                                                    TIMESTAMP)<date_add(cast(t1.contact_dttm AS TIMESTAMP),7)))  ) \n                                ) \n                                GROUP BY request_id \n                      ) t2 ON t1.contact_dttm=t2.MAX_contact_DT AND \n                                t1.request_id=t2.request_id \n            ) t2 ON (t1.contact_id=t2.contact_id AND t1.offer_id=t2.offer_id) OR\n                       (t1.customer_id=t2.customer_id AND t1.contact_id=t2.contact_id AND \n                      t1.channel_cd=\'mob_app\')\n  ) \n  LEFT \n  JOIN \n  (\n            SELECT customer_id,contact_dt \n            FROM sbx_005.DC_batch_table\n  ) t2 ON t1.customer_id=t2.customer_id AND CAST(t1.contact_dttm AS \n            TIMESTAMP)<CAST(t2.contact_dttm AS TIMESTAMP) AND (CAST(t2.contact_dt AS \n            TIMESTAMP)<CAST(t1.request_dt AS TIMESTAMP) OR t1.request_dt IS NULL) \n  GROUP BY t1.channel_cd,t1.campaign_nm,t1.customer_id,t1.contact_id,t1.offer_id,\n            t1.contact_dttm, t1.client_id_in_response_table,t1.product_nm,t1.request_id,\n            t1.request_dt,t1.issue_id,t1.issue_dt,t1.start_dt, t1.issue_sum',
+	"def __init__(self, verbose): \n self.verbose = verbose",
+	"def _make_estimator(self, append=True):\n # we don't need _make_estimator \n raise NotImplementedError()"];
+/* 	"print(exit) \n AssertionError a=[1,2,3] \n AS \n (SELECT * FROM table)" */
+
+var table_queries={"Top Level":python_codes[0],
+						"Level 2: A":python_codes[1],
+						"Level 2: B":python_codes[2]};
+
+
+
+var treeData = [
+  {
+    "name": "Top Level",
+    "parent": "null",
+    "children": [
+      {
+        "name": "Level 2: A",
+        "parent": "Top Level",
+        "children": [
+          {
+            "name": "Son of A",
+            "parent": "Level 2: A"
+          },
+          {
+            "name": "Daughter of A",
+            "parent": "Level 2: A"
+          }
+        ]
+      },
+      {
+        "name": "Level 2: B",
+        "parent": "Top Level"
+      }
+    ]
+  }
+];
+
+
+// ************** Generate the tree diagram	 *****************
+
+function createTreeStructure(){
+var margin = {top: 20, right: 120, bottom: 20, left: 120},
+	width = 960 - margin.right - margin.left,
+	height = 500 - margin.top - margin.bottom;
+	
+var i = 0,
+	duration = 300,
+	root;
+
+var tree = d3.layout.tree()
+	.size([height, width]);
+
+var diagonal = d3.svg.diagonal()
+	.projection(function(d) { return [d.y, d.x]; });
+
+var svg = d3.select("body").append("svg")
+	.attr("width", width + margin.right + margin.left)
+	.attr("height", height + margin.top + margin.bottom)
+  .append("g")
+	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+root = treeData[0];
+root.x0 = height / 2;
+root.y0 = 0;
+update(root,tree,root,svg,i,duration,diagonal);
+d3.select(self.frameElement).style("height", "500px");
+};
+
+
+createTreeStructure();
+
+
+  
+
+
+
+
+function update(source,tree,root,svg,i,duration,diagonal) {
+
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root).reverse(),
+	  links = tree.links(nodes);
+
+  // Normalize for fixed-depth.
+  nodes.forEach(function(d) { d.y = d.depth * 50; });
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+	  .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+	  .attr("class", "node")
+	  .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+	  .on("click", click);
+
+  nodeEnter.append("circle")
+	  .attr("r", 1e-6)
+	  .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeEnter.append("text")
+	  .attr("x", function(d) { return d.children || d._children ? -13 : 13; })
+	  .attr("dy", ".35em")
+	  .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+	  .text(function(d) { return d.name; })
+	  .style("fill-opacity", 1e-6);
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+	  .duration(duration)
+	  .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+  nodeUpdate.select("circle")
+	  .attr("r", 10)
+	  .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeUpdate.select("text")
+	  .style("fill-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+	  .duration(duration)
+	  .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+	  .remove();
+
+  nodeExit.select("circle")
+	  .attr("r", 1e-6);
+
+  nodeExit.select("text")
+	  .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+	  .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g")
+	  .attr("class", "link")
+	  .attr("d", function(d) {
+		var o = {x: source.x0, y: source.y0};
+		return diagonal({source: o, target: o});
+	  });
+
+  // Transition links to their new position.
+  link.transition()
+	  .duration(duration)
+	  .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+	  .duration(duration)
+	  .attr("d", function(d) {
+		var o = {x: source.x, y: source.y};
+		return diagonal({source: o, target: o});
+	  })
+	  .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+	d.x0 = d.x;
+	d.y0 = d.y;
+  });
+}
+
+function makeh1(text_) {
+  //создать контейнер
+	var el=document.createElement("div");
+	el.className="contents";
+	el.style.display="block";
+	
+
+   //создать код
+   var code=document.createElement("code");
+   code.className="language-sql";
+   code.textContent=text_;
+   Prism.highlightElement(code);
+	
+	//создать обертку кода
+	var pre=document.createElement("pre");
+	pre.className="language-sql";
+	pre.appendChild(code);
+	
+	//добавить обертку в контейнер
+	el.appendChild(pre);
+
+  return el
+}
+
+
+
+function comeback(){document.body.innerHTML = '';createTreeStructure();};
+
+// Toggle children on click.
+function click(d) {
+
+	var btn = document.createElement("BUTTON");   // Create a <button> element
+	btn.id="BUTTON"
+	btn.innerHTML = "BACK TO TREE";                   // Insert text
+	
+	document.body.appendChild(btn);               // Append <button> to <body>
+	document.body.getElementsByTagName('BUTTON')[0].onclick=function(){comeback();};
+	
+	
+	var element = document.getElementById("query");
+	if (typeof(element) != 'undefined' && element != null){
+		element.parentNode.removeChild(element)};
+	d3.select("svg").remove();
+	
+ 	el=makeh1(table_queries[d.name]); 
+	//showCode(table_queries[d.name]);
+ 	//el.id='query';
+	document.body.appendChild(el) ;
+	
+	 
+	
+}
+
+</script>
+	
+  </body>
+</html>
